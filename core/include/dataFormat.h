@@ -1,5 +1,6 @@
 //
 // Created by meng on 25-7-7.
+// DOC 基本数据格式定义
 //
 
 #ifndef DATAFORMAT_H
