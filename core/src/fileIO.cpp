@@ -1,7 +1,9 @@
 //
 // Created by meng on 25-7-8.
-// DOC æ–‡ä»¶IOæ¨¡å—
+// DOC ÎÄ¼şIOÄ£¿é
 //
+
+#include "../include/fileIO.h"
 
 #include <string>
 #include <fstream>
@@ -11,154 +13,137 @@
 #include "../include/dataFormat.h"
 #include "../include/config.h"
 
-class FileIO {
-private:
-    std::string parkStatusFileName; // è½¦ä½çŠ¶æ€ä¿¡æ¯æ–‡ä»¶å
-    std::string parkLogFileName; // è½¦ä½çŠ¶æ€ä¿¡æ¯æ–‡ä»¶åå’Œè½¦è¾†åœå…¥ä¿¡æ¯æ–‡ä»¶å
-    ParkStatus parkStatus[PARK_MAX_NUMBER]; // è½¦ä½çŠ¶æ€ä¿¡æ¯æ•°ç»„
-    ParkInfo *parkInfo_head = nullptr; // è½¦è¾†åœå…¥ä¿¡æ¯é“¾è¡¨å¤´æŒ‡é’ˆ
-    ParkInfo *parkInfo_tail = nullptr; // è½¦è¾†åœå…¥ä¿¡æ¯é“¾è¡¨å°¾æŒ‡é’ˆ
-    int parkPtr; // è½¦ä½æŒ‡é’ˆï¼Œç”¨äºåˆ†é…è½¦ä½
 
-public:
-    // æ„é€ å‡½æ•°
-    FileIO() : FileIO(PARK_STATUS_FILE_NAME, PARK_LOG_FILE_NAME) {
-    };
-
-    FileIO(const std::string &statusFile, const std::string &logFile) : parkStatusFileName(statusFile),
-                                                                        parkLogFileName(logFile) {
-        loadParkStatus();
-        loadParkLog();
-    };
-
-    // åŠŸèƒ½å‡½æ•°
-    /**
-     * è½½å…¥è½¦ä½çŠ¶æ€ä¿¡æ¯è¡¨åˆ°å†…å­˜ä¸­
-     */
-    void loadParkStatus() {
-        // åˆ›å»ºæ–‡ä»¶æµ
-        std::ifstream ParkStatusFile(parkStatusFileName);
-        if (!ParkStatusFile.is_open()) {
-            std::cerr << "æ— æ³•æ‰“å¼€è½¦ä½çŠ¶æ€ä¿¡æ¯æ–‡ä»¶: " << parkStatusFileName << std::endl;
-            return;
-        }
-
-        // åˆå§‹åŒ–æ•°ç»„
-        for (int i = 0; i < PARK_MAX_NUMBER; ++i) {
-            parkStatus[i].ParkId = i + 1;
-            parkStatus[i].status = 0;
-            parkStatus[i].CarNum = "";
-            parkStatus[i].time = 0;
-        }
-
-        // è¯»å–æ–‡ä»¶å†…å®¹
-        std::string line;
-        while (std::getline(ParkStatusFile, line)) {
-            std::stringstream ss(line); // åˆ›å»ºå­—ç¬¦ä¸²æµå¯¹è±¡
-            std::string ParkId_str, status_str, CarNum, time_str;
-            std::getline(ss, ParkId_str, ',');
-            std::getline(ss, status_str, ',');
-            std::getline(ss, CarNum, ',');
-            std::getline(ss, time_str, ',');
-
-            int ParkId = std::stoi(ParkId_str);
-            int status = std::stoi(status_str);
-            int time = std::stoi(time_str);
-
-            parkStatus[ParkId - 1].status = status;
-            parkStatus[ParkId - 1].CarNum = CarNum;
-            parkStatus[ParkId - 1].time = time;
-        }
-        ParkStatusFile.close();
-        std::cout << "è½¦ä½çŠ¶æ€ä¿¡æ¯åŠ è½½æˆåŠŸã€‚" << std::endl;
+/**
+ * ÔØÈë³µÎ»×´Ì¬ĞÅÏ¢±íµ½ÄÚ´æÖĞ
+ */
+bool FileIO::loadParkStatus(const std::string &statusFileName, ParkStatus parkStatus[]) {
+    // ´´½¨ÎÄ¼şÁ÷
+    std::ifstream ParkStatusFile(statusFileName);
+    if (!ParkStatusFile.is_open()) {
+        std::cerr << "ÎŞ·¨´ò¿ª³µÎ»×´Ì¬ĞÅÏ¢ÎÄ¼ş: " << statusFileName << std::endl;
+        return false; // ÖĞ¶Ï²Ù×÷
     }
 
-    /**
-     * ä¿å­˜è½¦ä½çŠ¶æ€ä¿¡æ¯è¡¨åˆ°æ–‡ä»¶ä¸­
-     */
-    void saveParkStatus() {
-        // åˆ›å»ºæ–‡ä»¶æµ
-        std::ofstream ParkStatusFile(parkStatusFileName);
-        if (!ParkStatusFile.is_open()) {
-            std::cerr << "æ— æ³•æ‰“å¼€è½¦ä½çŠ¶æ€ä¿¡æ¯æ–‡ä»¶: " << parkStatusFileName << std::endl;
-            return;
-        }
-
-        // å†™å…¥æ–‡ä»¶å†…å®¹
-        for (int i = 0; i < PARK_MAX_NUMBER; ++i) {
-            ParkStatusFile << parkStatus[i].ParkId << ","
-                    << parkStatus[i].status << ","
-                    << parkStatus[i].CarNum << ","
-                    << parkStatus[i].time << "\n";
-        }
-        ParkStatusFile.close();
-        std::cout << "è½¦ä½çŠ¶æ€ä¿¡æ¯ä¿å­˜æˆåŠŸã€‚" << std::endl;
+    // ³õÊ¼»¯Êı×é
+    for (int i = 0; i < PARK_MAX_NUMBER; ++i) {
+        parkStatus[i].ParkId = i + 1;
+        parkStatus[i].status = 0;
+        parkStatus[i].CarNum = "";
+        parkStatus[i].time = 0;
     }
 
-    /**
-     * è½½å…¥è½¦è¾†åœå…¥ä¿¡æ¯è¡¨åˆ°å†…å­˜ä¸­
-     */
-    void loadParkLog() {
-        // åˆ›å»ºæ–‡ä»¶æµ
-        std::ifstream ParkLogFile(parkLogFileName);
-        if (!ParkLogFile.is_open()) {
-            std::cerr << "æ— æ³•æ‰“å¼€è½¦è¾†åœå…¥ä¿¡æ¯æ–‡ä»¶: " << parkLogFileName << std::endl;
-            return;
-        }
+    // ¶ÁÈ¡ÎÄ¼şÄÚÈİ
+    std::string line;
+    while (std::getline(ParkStatusFile, line)) {
+        std::stringstream ss(line); // ´´½¨×Ö·û´®Á÷¶ÔÏó
+        std::string ParkId_str, status_str, CarNum, time_str;
+        std::getline(ss, ParkId_str, ',');
+        std::getline(ss, status_str, ',');
+        std::getline(ss, CarNum, ',');
+        std::getline(ss, time_str, ',');
 
-        std::string line;
-        while (std::getline(ParkLogFile, line)) {
-            std::stringstream ss(line);
-            std::string CarNum, ParkId_str, ParkingTime_str, OutTime_str, Cost_str, isPaid_str;
+        int ParkId = std::stoi(ParkId_str);
+        int status = std::stoi(status_str);
+        int time = std::stoi(time_str);
 
-            std::getline(ss, CarNum, ',');
-            std::getline(ss, ParkId_str, ',');
-            std::getline(ss, ParkingTime_str, ',');
-            std::getline(ss, OutTime_str, ',');
-            std::getline(ss, Cost_str, ',');
-            std::getline(ss, isPaid_str, ',');
+        parkStatus[ParkId - 1].status = status;
+        parkStatus[ParkId - 1].CarNum = CarNum;
+        parkStatus[ParkId - 1].time = time;
+    }
+    ParkStatusFile.close();
+    std::cout << "³µÎ»×´Ì¬ĞÅÏ¢¼ÓÔØ³É¹¦¡£" << std::endl;
+    return true; // ³É¹¦¼ÓÔØ
+}
 
-            int ParkId = std::stoi(ParkId_str);
-            int ParkingTime = std::stoi(ParkingTime_str);
-            int OutTime = std::stoi(OutTime_str);
-            float Cost = std::stof(Cost_str);
-            bool isPaid = (isPaid_str == "1");
-
-            ParkInfo *ParkInfo_temp = new ParkInfo{CarNum, ParkId, ParkingTime, OutTime, Cost, isPaid};
-            ParkInfo_temp->next = nullptr;
-            if (parkInfo_head == nullptr) {
-                parkInfo_head = parkInfo_tail = ParkInfo_temp;
-            } else {
-                parkInfo_tail->next = ParkInfo_temp;
-                parkInfo_tail = ParkInfo_temp;
-            }
-        }
-        ParkLogFile.close();
-        std::cout << "è½¦è¾†åœå…¥ä¿¡æ¯åŠ è½½æˆåŠŸã€‚" << std::endl;
+/**
+ * ±£´æ³µÎ»×´Ì¬ĞÅÏ¢±íµ½ÎÄ¼şÖĞ
+ */
+bool FileIO::saveParkStatus(const std::string &statusFileName, ParkStatus parkStatus[]) {
+    // ´´½¨ÎÄ¼şÁ÷
+    std::ofstream ParkStatusFile(statusFileName);
+    if (!ParkStatusFile.is_open()) {
+        std::cerr << "ÎŞ·¨´ò¿ª³µÎ»×´Ì¬ĞÅÏ¢ÎÄ¼ş: " << statusFileName << std::endl;
+        return false;
     }
 
-    /**
-     * ä¿å­˜è½¦è¾†åœå…¥ä¿¡æ¯è¡¨åˆ°æ–‡ä»¶ä¸­
-     */
-    void saveParkLog() {
-        // åˆ›å»ºæ–‡ä»¶æµ
-        std::ofstream ParkLogFile(parkLogFileName);
-        if (!ParkLogFile.is_open()) {
-            std::cerr << "æ— æ³•æ‰“å¼€è½¦è¾†åœå…¥ä¿¡æ¯æ–‡ä»¶: " << parkLogFileName << std::endl;
-            return;
-        }
-        // å†™å…¥æ–‡ä»¶å†…å®¹
-        ParkInfo *current = parkInfo_head;
-        while (current != nullptr) {
-            ParkLogFile << current->CarNum << ","
-                    << current->ParkId << ","
-                    << current->ParkingTime << ","
-                    << current->OutTime << ","
-                    << current->Cost << ","
-                    << (current->isPaid ? "1" : "0") << "\n";
-            current = current->next;
-        }
-        ParkLogFile.close();
-        std::cout << "è½¦è¾†åœå…¥ä¿¡æ¯ä¿å­˜æˆåŠŸã€‚" << std::endl;
+    // Ğ´ÈëÎÄ¼şÄÚÈİ
+    for (int i = 0; i < PARK_MAX_NUMBER; ++i) {
+        ParkStatusFile << parkStatus[i].ParkId << ","
+                << parkStatus[i].status << ","
+                << parkStatus[i].CarNum << ","
+                << parkStatus[i].time << "\n";
     }
-};
+    ParkStatusFile.close();
+    std::cout << "³µÎ»×´Ì¬ĞÅÏ¢±£´æ³É¹¦¡£" << std::endl;
+    return true;
+}
+
+/**
+ * ÔØÈë³µÁ¾Í£ÈëĞÅÏ¢±íµ½ÄÚ´æÖĞ
+ */
+bool FileIO::loadParkLog(const std::string &logFileName, ParkInfo *&parkInfo_head, ParkInfo *&parkInfo_tail) {
+    // ´´½¨ÎÄ¼şÁ÷
+    std::ifstream ParkLogFile(logFileName);
+    if (!ParkLogFile.is_open()) {
+        std::cerr << "ÎŞ·¨´ò¿ª³µÁ¾Í£ÈëĞÅÏ¢ÎÄ¼ş: " << logFileName << std::endl;
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(ParkLogFile, line)) {
+        std::stringstream ss(line);
+        std::string CarNum, ParkId_str, ParkingTime_str, OutTime_str, Cost_str, isPaid_str;
+
+        std::getline(ss, CarNum, ',');
+        std::getline(ss, ParkId_str, ',');
+        std::getline(ss, ParkingTime_str, ',');
+        std::getline(ss, OutTime_str, ',');
+        std::getline(ss, Cost_str, ',');
+        std::getline(ss, isPaid_str, ',');
+
+        int ParkId = std::stoi(ParkId_str);
+        int ParkingTime = std::stoi(ParkingTime_str);
+        int OutTime = std::stoi(OutTime_str);
+        float Cost = std::stof(Cost_str);
+        bool isPaid = (isPaid_str == "1");
+
+        ParkInfo *ParkInfo_temp = new ParkInfo{CarNum, ParkId, ParkingTime, OutTime, Cost, isPaid};
+        ParkInfo_temp->next = nullptr;
+        if (parkInfo_head == nullptr) {
+            parkInfo_head = parkInfo_tail = ParkInfo_temp;
+        } else {
+            parkInfo_tail->next = ParkInfo_temp;
+            parkInfo_tail = ParkInfo_temp;
+        }
+    }
+    ParkLogFile.close();
+    std::cout << "³µÁ¾Í£ÈëĞÅÏ¢¼ÓÔØ³É¹¦¡£" << std::endl;
+    return true; // ³É¹¦¼ÓÔØ
+}
+
+/**
+ * ±£´æ³µÁ¾Í£ÈëĞÅÏ¢±íµ½ÎÄ¼şÖĞ
+ */
+bool FileIO::saveParkLog(const std::string &logFileName, ParkInfo *parkInfo_head) {
+    // ´´½¨ÎÄ¼şÁ÷
+    std::ofstream ParkLogFile(logFileName);
+    if (!ParkLogFile.is_open()) {
+        std::cerr << "ÎŞ·¨´ò¿ª³µÁ¾Í£ÈëĞÅÏ¢ÎÄ¼ş: " << logFileName << std::endl;
+        return false;
+    }
+    // Ğ´ÈëÎÄ¼şÄÚÈİ
+    ParkInfo *current = parkInfo_head;
+    while (current != nullptr) {
+        ParkLogFile << current->CarNum << ","
+                << current->ParkId << ","
+                << current->ParkingTime << ","
+                << current->OutTime << ","
+                << current->Cost << ","
+                << (current->isPaid ? "1" : "0") << "\n";
+        current = current->next;
+    }
+    ParkLogFile.close();
+    std::cout << "³µÁ¾Í£ÈëĞÅÏ¢±£´æ³É¹¦¡£" << std::endl;
+    return true;
+}
