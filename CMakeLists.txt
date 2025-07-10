@@ -15,7 +15,11 @@ link_directories(${GTK3_LIBRARY_DIRS})
 add_definitions(${GTK3_CFLAGS_OTHER})
 
 # 添加可执行文件
-add_executable(ParkingManagementSystem_cProject main.cpp)
+add_executable(ParkingManagementSystem_cProject main.cpp
+        core/src/GUI.cpp
+        core/src/Event.cpp
+        core/src/fileIO.cpp
+)
 
 # 链接GTK3库
 target_link_libraries(ParkingManagementSystem_cProject ${GTK3_LIBRARIES})
